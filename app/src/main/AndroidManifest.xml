@@ -24,6 +24,13 @@
             android:authorities="com.example.android.coffee"
             android:name=".data.CoffeeProvider"
             android:exported="false"/>
+
+        <receiver android:name=".MyBroadcastReceiver">
+            <intent-filter android:priority="888">
+                <action android:name="android.provider.Telephony.SMS_TECEIVED"/>
+            </intent-filter>
+
+        </receiver>
         
     </application>
 

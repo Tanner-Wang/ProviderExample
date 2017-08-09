@@ -3,10 +3,14 @@ package com.example.android.providerexample;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v4.util.LruCache;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -19,6 +23,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private static Uri coffeeUri = Uri.parse("content://com.example.android.coffee/coffee");
 
     private static ViewHolder holder = new ViewHolder();
+
+    private LruCache<String, Bitmap> bitmapLruCache;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,6 +40,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         holder.textInsert.setOnClickListener(this);
         holder.textUpdate.setOnClickListener(this);
         holder.textDelete.setOnClickListener(this);
+
+        final int maxMemory = (int) (Runtime.getRuntime().maxMemory()/1024);
+        final int cacheSize = maxMemory/8;
+        bitmapLruCache = new LruCache<String, Bitmap>(cacheSize){
+            @Override
+            protected int sizeOf(String key, Bitmap bitmap) {
+                return bitmap.getByteCount()/1024;
+            }
+        };
+
+
 
     }
 
@@ -86,6 +103,40 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
 
     }
+
+    public void addBitmapToMemoryCache(String key, Bitmap bitmap){
+        if (getBitmapFromMemoryCache(key) == null) {
+            bitmapLruCache.put(key, bitmap);
+        }
+    }
+    public Bitmap getBitmapFromMemoryCache(String key){
+        return bitmapLruCache.get(key);
+    }
+    public void loadBitmap(int resId, ImageView imageView){
+        final String imageKey = String.valueOf(resId);
+        final Bitmap bitmap = getBitmapFromMemoryCache(imageKey);
+        if (bitmap != null) {
+            imageView.setImageBitmap(bitmap);
+        }else{
+            imageView.setImageResource(R.drawable.empty);
+            MyAsyncTask myAsyncTask = new MyAsyncTask();
+            myAsyncTask.execute();
+        }
+    }
+
+    public class MyAsyncTask extends AsyncTask<Integer, Void, Bitmap>{
+        @Override
+        protected void onPostExecute(Bitmap bitmap) {
+            super.onPostExecute(bitmap);
+        }
+
+        @Override
+        protected Bitmap doInBackground(Integer... params) {
+            return null;
+        }
+    }
+
+
 
     private static class ViewHolder{
         public ViewHolder(){}
